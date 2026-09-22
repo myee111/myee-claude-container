@@ -31,20 +31,27 @@ You need the git repo here because `make build` uses the `Containerfile` and
 
 ---
 
-## 2. Normal use — **does NOT require the git repo**
+## 2. Normal use — **doesn't require *working out of* the git repo**
 
 This is the everyday path: running the already-built, already-published
-image. You do not need to `git clone` anything for this — you only need the
-**[`client/`](client/)** folder, which is fully self-contained. Get it onto
-the target host any way you like: `git clone` + copy just that folder,
-`scp`/`rsync` it directly, download it as a tarball, etc.
+image. You never run `make`/touch the `Containerfile` for this — you only
+need the **[`client/`](client/)** folder. The easiest way to get just that
+folder onto a new host is still one `git clone` command (the repo is tiny,
+so pulling the whole thing costs nothing):
+
+```bash
+gh repo clone myee111/myee-claude-container -- --depth 1 && cd myee-claude-container/client
+```
+
+(No `gh` CLI logged in on that host? See
+[`client/README.md`](client/README.md) step 1 for the personal-access-token
+equivalent.)
 
 **One-time setup on that host:**
 
 ```bash
 gcloud auth application-default login      # if not already done
 
-cd client
 cp .env.example .env
 $EDITOR .env                                # fill in QUAY_USERNAME/PASSWORD, GCP_PROJECT_ID
 ./bin/login-quay                            # log podman into quay.io (image is private)
@@ -73,7 +80,7 @@ See [`client/README.md`](client/README.md) for more detail on this half.
 | Task | Needs git repo? |
 | --- | --- |
 | Build a new image version (`make build`/`make all`) | **Yes** |
-| Run `claude` day-to-day on any host | **No** — just the `client/` folder |
+| Run `claude` day-to-day on any host | **No** — just the `client/` folder (though `git clone` is the easiest one-step way to fetch it) |
 | Change the `Containerfile`/`Makefile` | **Yes** |
 | Push to quay.io (`make push`) | **Yes** (it's a `make` target in the repo) |
 | Point `claude` at a different GCP project/region | **No** — edit `client/.env` or set env vars inline |
