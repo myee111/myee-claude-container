@@ -20,7 +20,20 @@ the whole thing costs nothing.
    gh repo clone myee111/myee-claude-container -- --depth 1 && cd myee-claude-container/client
    ```
 
-   No `gh`, or not logged in on this host? Use a
+   No `gh` installed yet? On RHEL / Fedora / CentOS / Rocky (dnf4, which is
+   what RHEL 10 uses):
+
+   ```bash
+   sudo dnf install -y 'dnf-command(config-manager)'
+   sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+   sudo dnf install -y gh
+   gh auth login
+   ```
+
+   On macOS: `brew install gh && gh auth login`. Other platforms: see the
+   [official install docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).
+
+   Not able to install `gh` or log in interactively on this host? Use a
    [GitHub personal access token](https://github.com/settings/tokens)
    (fine-grained, read-only, scoped to just this repo) instead:
 
