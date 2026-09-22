@@ -12,7 +12,24 @@
 # time it's needed.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve the real path of this script, following symlinks. This matters
+# because the documented setup symlinks this file onto $PATH (e.g.
+# ~/.local/bin/claude) — plain `dirname "${BASH_SOURCE[0]}"` would resolve
+# to the symlink's directory, not this script's real directory, and then
+# fail to find .env right next to it. Portable across GNU (Linux) and BSD
+# (macOS) readlink, unlike `readlink -f`.
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -h "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    source="$(readlink "$source")"
+    [[ $source != /* ]] && source="$dir/$source"
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
 CLIENT_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [[ -f "$CLIENT_DIR/.env" ]]; then

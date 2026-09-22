@@ -44,17 +44,10 @@ folder onto a new host is still one `git clone` command, **no auth needed**
 git clone --depth 1 https://github.com/myee111/myee-claude-container.git && cd myee-claude-container/client
 ```
 
-**One-time setup on that host:**
-
-```bash
-gcloud auth application-default login      # if not already done
-
-cp .env.example .env
-$EDITOR .env                                # fill in QUAY_USERNAME/PASSWORD, GCP_PROJECT_ID
-./bin/login-quay                            # log podman into quay.io (image is private)
-
-ln -s "$PWD/bin/claude" ~/.local/bin/claude # put `claude` on your PATH
-```
+**One-time setup on that host** — see
+[`client/README.md`](client/README.md) for the full walkthrough (installing
+`podman`, getting Google credentials onto the host, filling in `.env`,
+`login-quay`, and correctly putting `claude` on your `PATH`).
 
 **Every day after that:**
 

@@ -22,7 +22,13 @@ the container *image* is still private).
 
    (Already have the `gh` CLI? `gh repo clone myee111/myee-claude-container -- --depth 1` works the same way.)
 
-2. Make sure `podman` is installed.
+2. Make sure `podman` is installed. On RHEL / Fedora / CentOS / Rocky:
+   ```bash
+   sudo dnf install -y podman
+   ```
+   On Debian/Ubuntu: `sudo apt-get install -y podman`. On macOS:
+   `brew install podman` (plus `podman machine init && podman machine start`
+   if you've never used it before).
 3. Get a Google Application Default Credentials (ADC) JSON file onto this
    host. **The `gcloud` CLI is not required on this host** — the container
    only needs the resulting file, not the CLI itself. Pick whichever option
@@ -55,7 +61,15 @@ the container *image* is still private).
    ```
 6. Put `bin/claude` on your `PATH` (or just call it by path):
    ```bash
+   mkdir -p ~/.local/bin
    ln -s "$PWD/bin/claude" ~/.local/bin/claude
+   ```
+   Then make sure `~/.local/bin` is actually on your `PATH` — it often
+   isn't by default for `root` or on minimal systems:
+   ```bash
+   echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin" \
+     && echo "already on PATH" \
+     || { echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc; echo "added to ~/.bashrc — run: source ~/.bashrc"; }
    ```
 
 ### Option D: installing the `gcloud` CLI on this host
