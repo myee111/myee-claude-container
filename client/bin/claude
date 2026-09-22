@@ -22,7 +22,7 @@ if [[ -f "$CLIENT_DIR/.env" ]]; then
   set +a
 fi
 
-IMAGE_NAME="${IMAGE_NAME:-quay.io/myee/claude-container}"
+IMAGE_NAME="${IMAGE_NAME:-quay.io/your-namespace/claude-container}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 GCP_REGION="${GCP_REGION:-global}"
 ADC_HOST_PATH="${ADC_HOST_PATH:-$HOME/.config/gcloud/application_default_credentials.json}"

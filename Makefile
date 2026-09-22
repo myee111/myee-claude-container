@@ -8,8 +8,12 @@ SHELL := /bin/bash
 # each recipe below sources .env through bash itself, which respects the
 # single-quoting used in .env/.env.example.
 
-IMAGE_NAME  ?= quay.io/myee/claude-container
-IMAGE_TAG   ?= latest
+# Read IMAGE_NAME/IMAGE_TAG from .env via a bash subshell (not Make's own
+# -include, for the same # /comment-parsing reason as above), falling back
+# to a generic placeholder if .env is missing or doesn't set them. This
+# means the real image reference lives only in .env, never hardcoded here.
+IMAGE_NAME := $(shell if [ -f ./.env ]; then set -a; . ./.env; set +a; fi; echo "$${IMAGE_NAME:-quay.io/your-namespace/claude-container}")
+IMAGE_TAG  := $(shell if [ -f ./.env ]; then set -a; . ./.env; set +a; fi; echo "$${IMAGE_TAG:-latest}")
 LOCAL_IMAGE := $(IMAGE_NAME):$(IMAGE_TAG)
 
 .PHONY: login-redhat login-quay build run push pull all check-env
