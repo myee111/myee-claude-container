@@ -1,8 +1,13 @@
 # claude-container client
 
 Everything in this folder is all you need to run `claude` (backed by
-`quay.io/myee/claude-container`) on any **x86_64 podman host**. No repo
-clone, no build — just this folder.
+`quay.io/myee/claude-container`) on any **x86_64 podman host**.
+
+**You do not need to `git clone` the
+[myee-claude-container](https://github.com/myee111/myee-claude-container)
+repo for this.** That repo is only needed to *build* a new image version.
+This folder is fully self-contained — copy it however you like (it doesn't
+even need to come from a git checkout).
 
 ## Setup (once per host)
 
