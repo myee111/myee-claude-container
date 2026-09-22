@@ -81,12 +81,37 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 install -m 644 "$ADC_HOST_PATH" "$TMP_DIR/adc.json"
 
+# SSH access to other systems, two mechanisms (both harmless to attempt
+# together — ssh just falls back to keys if the agent isn't reachable):
+#
+# 1. Primary/reliable: stage a copy of ~/.ssh into a private temp dir with
+#    relaxed (0644) permissions, same reasoning as the ADC file above —
+#    the container's non-root uid can't read your real ~/.ssh's normal
+#    0600 key permissions directly. Mounted read-only; the entrypoint
+#    copies it into the container's own ~/.ssh and fixes real permissions
+#    (600 on private keys) there, so your actual ~/.ssh on disk is never
+#    modified and the mounted copy itself is never used directly by ssh.
+# 2. Best-effort bonus: forward ssh-agent via SSH_AUTH_SOCK if set. This
+#    depends on host SELinux/namespace policy and may not work everywhere.
+SSH_MOUNT_ARGS=()
+if [[ -d "$HOME/.ssh" ]]; then
+  SSH_TMP_DIR="$(mktemp -d)"
+  trap 'rm -rf "$TMP_DIR" "$SSH_TMP_DIR"' EXIT
+  cp -a "$HOME/.ssh/." "$SSH_TMP_DIR/" 2>/dev/null || true
+  chmod -R u+rwX,go+rX "$SSH_TMP_DIR" 2>/dev/null || true
+  SSH_MOUNT_ARGS+=(-v "$SSH_TMP_DIR:/home/claude/.ssh-import:ro,Z")
+fi
+if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
+  SSH_MOUNT_ARGS+=(-v "${SSH_AUTH_SOCK}:/tmp/ssh-agent.sock:Z" -e SSH_AUTH_SOCK=/tmp/ssh-agent.sock)
+fi
+
 podman run --rm -it \
   -v "$TMP_DIR/adc.json:/home/claude/.config/gcloud/application_default_credentials.json:ro,Z" \
   -e CLAUDE_CODE_USE_VERTEX=1 \
   -e CLOUD_ML_REGION="$GCP_REGION" \
   -e ANTHROPIC_VERTEX_PROJECT_ID="$GCP_PROJECT_ID" \
   -e GOOGLE_APPLICATION_CREDENTIALS=/home/claude/.config/gcloud/application_default_credentials.json \
+  "${SSH_MOUNT_ARGS[@]}" \
   -v "$PWD:/home/claude/workspace:Z" \
   -w /home/claude/workspace \
   "${IMAGE_NAME}:${IMAGE_TAG}" \

@@ -21,6 +21,32 @@ if [ "$(id -u)" = "0" ]; then
   git config --system --add safe.directory "$WORKSPACE" 2>/dev/null || true
   git config --system --add safe.directory '*' 2>/dev/null || true
 
+  # Forwarded ssh-agent socket (best-effort — works on some hosts, blocked
+  # by SELinux/namespace policy on others; harmless to attempt either way
+  # since ssh falls back to key files if the agent isn't reachable).
+  if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ]; then
+    chown "$CLAUDE_UID:$CLAUDE_GID" "$SSH_AUTH_SOCK" 2>/dev/null || true
+  fi
+
+  # Primary, reliable SSH mechanism: bin/claude stages a copy of the
+  # host's ~/.ssh into a read-only mount at /home/claude/.ssh-import (with
+  # relaxed perms so uid 1001 can read it — see bin/claude for why).
+  # Copy it into the container's own writable ~/.ssh here, fix the perms
+  # OpenSSH actually requires (600 on private keys, 644 on everything
+  # else), and chown it all to the unprivileged user.
+  if [ -d /home/claude/.ssh-import ]; then
+    cp -a /home/claude/.ssh-import/. /home/claude/.ssh/ 2>/dev/null || true
+    find /home/claude/.ssh -maxdepth 1 -type f \
+      ! -name '*.pub' ! -name 'known_hosts*' ! -name 'config' ! -name 'authorized_keys' \
+      -exec chmod 600 {} \; 2>/dev/null || true
+    find /home/claude/.ssh -maxdepth 1 -type f \
+      \( -name '*.pub' -o -name 'known_hosts*' -o -name 'config' \) \
+      -exec chmod 644 {} \; 2>/dev/null || true
+  fi
+  if [ -e /home/claude/.ssh ]; then
+    chown -R "$CLAUDE_UID:$CLAUDE_GID" /home/claude/.ssh 2>/dev/null || true
+  fi
+
   exec setpriv --reuid="$CLAUDE_UID" --regid="$CLAUDE_GID" --clear-groups -- "$@"
 fi
 

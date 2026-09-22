@@ -36,20 +36,30 @@ RUN dnf install -y \
       --nodocs \
       bash coreutils git ca-certificates tar gzip curl-minimal \
       findutils grep sed gawk diffutils which glibc-langpack-en \
-      util-linux claude-code \
+      util-linux openssh-clients claude-code \
     && dnf --installroot $ROOTFS clean all
 
 # Non-root user, OpenShift-style arbitrary-UID-friendly (group 0).
 RUN useradd -R $ROOTFS -u 1001 -g 0 -M -d /home/claude -s /bin/bash claude \
     && mkdir -p $ROOTFS/home/claude/workspace $ROOTFS/home/claude/.config/gcloud \
+             $ROOTFS/home/claude/.ssh $ROOTFS/home/claude/.claude \
+    && chmod 700 $ROOTFS/home/claude/.ssh \
     && chown -R 1001:0 $ROOTFS/home/claude
+
+# Auto-trust new SSH hosts (this is a non-interactive agent environment —
+# an interactive host-key prompt would just hang) while still correctly
+# failing on a *changed* host key.
+RUN mkdir -p $ROOTFS/etc/ssh/ssh_config.d \
+    && printf 'Host *\n    StrictHostKeyChecking accept-new\n' > $ROOTFS/etc/ssh/ssh_config.d/99-container.conf
 
 # ---- Final: UBI 10 Micro ----
 FROM registry.redhat.io/ubi10/ubi-micro
 
 COPY --from=builder /mnt/rootfs/ /
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY claude-memory.md /home/claude/.claude/CLAUDE.md
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && chown 1001:0 /home/claude/.claude/CLAUDE.md
 
 # Only a generic HOME path — no project ID, region, or credential path here.
 ENV HOME=/home/claude

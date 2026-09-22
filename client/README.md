@@ -167,6 +167,20 @@ way across every project on this host.
   briefly, `chown -R`s the mounted workspace and configures git's
   `safe.directory`, then permanently drops to the unprivileged user before
   running anything else — no manual `chown` needed on the host.
+- **`ssh`/`scp` work out of the box.** If `~/.ssh` exists on the host,
+  its contents are copied into the container's own `~/.ssh` at startup
+  with correct permissions fixed up (your real `~/.ssh` on disk is never
+  modified — a staged, relaxed-permission copy is mounted read-only and
+  copied again inside the container). ssh-agent forwarding via
+  `SSH_AUTH_SOCK` is also attempted as a bonus, but it depends on host
+  SELinux/kernel namespace policy and isn't guaranteed everywhere — the
+  key-copy mechanism is the reliable one. New hosts are auto-trusted on
+  first connect (`StrictHostKeyChecking accept-new`) so this works
+  non-interactively.
+- **Claude Code knows it's containerized.** A `~/.claude/CLAUDE.md` is
+  baked into the image describing the environment (only `/home/claude/workspace`
+  persists, no package manager/sudo at runtime, how SSH access works,
+  etc.) so it doesn't make wrong assumptions about what it can do.
 - To point at a different GCP project/region without editing `.env`:
   ```bash
   GCP_PROJECT_ID='other-project' GCP_REGION='us-east5' claude
