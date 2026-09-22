@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Pull the latest published image without running anything.
+#
+# `podman run` (and therefore `claude`) reuses whatever's cached locally
+# under the image tag — it does NOT automatically check quay.io for a
+# newer version. Run this after a new image has been published to
+# actually fetch it.
+set -euo pipefail
+
+# See bin/claude for why this resolves symlinks instead of a plain dirname.
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -h "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    source="$(readlink "$source")"
+    [[ $source != /* ]] && source="$dir/$source"
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
+CLIENT_DIR="$(dirname "$SCRIPT_DIR")"
+
+if [[ -f "$CLIENT_DIR/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$CLIENT_DIR/.env"
+  set +a
+fi
+
+IMAGE_NAME="${IMAGE_NAME:-quay.io/your-namespace/claude-container}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+
+# Same fully-qualified check as bin/claude — see there for why this matters.
+registry_part="${IMAGE_NAME%%/*}"
+if [[ "$IMAGE_NAME" != */* ]] || [[ "$registry_part" != *.* && "$registry_part" != *:* && "$registry_part" != "localhost" ]]; then
+  echo "pull: IMAGE_NAME='$IMAGE_NAME' in $CLIENT_DIR/.env is not fully qualified." >&2
+  echo "      Set it to something like 'quay.io/myee/claude-container'." >&2
+  exit 1
+fi
+
+echo "Pulling ${IMAGE_NAME}:${IMAGE_TAG}..."
+podman pull "${IMAGE_NAME}:${IMAGE_TAG}"

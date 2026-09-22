@@ -154,6 +154,21 @@ The first run pulls the image automatically; after that it's cached locally.
 `claude` mounts whatever directory you're standing in, so it works the same
 way across every project on this host.
 
+## Getting a newer image later
+
+`podman run` (and therefore `claude`) reuses whatever's already cached
+locally under the image tag — it does **not** automatically check
+quay.io for a newer version. After a new version has been published, pull
+it explicitly:
+
+```bash
+./bin/pull
+```
+
+(Equivalent to `podman pull quay.io/myee/claude-container:latest`, but
+reads the image name/tag from `.env` for you.) Then just use `claude` as
+normal — no need to re-run `setup.sh` or touch anything else.
+
 ## Notes
 
 - This image is `linux/amd64` (x86_64) only.
