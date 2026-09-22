@@ -36,7 +36,7 @@ RUN dnf install -y \
       --nodocs \
       bash coreutils git ca-certificates tar gzip curl-minimal \
       findutils grep sed gawk diffutils which glibc-langpack-en \
-      claude-code \
+      util-linux claude-code \
     && dnf --installroot $ROOTFS clean all
 
 # Non-root user, OpenShift-style arbitrary-UID-friendly (group 0).
@@ -48,11 +48,18 @@ RUN useradd -R $ROOTFS -u 1001 -g 0 -M -d /home/claude -s /bin/bash claude \
 FROM registry.redhat.io/ubi10/ubi-micro
 
 COPY --from=builder /mnt/rootfs/ /
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Only a generic HOME path — no project ID, region, or credential path here.
 ENV HOME=/home/claude
 
 WORKDIR /home/claude/workspace
-USER 1001
 
+# No fixed USER here (defaults to root/0): the entrypoint needs root
+# briefly to fix up the bind-mounted workspace's ownership (host-mounted
+# dirs almost never already belong to uid 1001) and configure git's
+# safe.directory, then it permanently drops privileges to uid 1001 before
+# ever running your actual command. See entrypoint.sh.
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]

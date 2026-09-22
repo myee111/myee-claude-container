@@ -160,6 +160,13 @@ way across every project on this host.
 - Your Google ADC file's real permissions on disk are never changed — the
   wrapper copies it to a private temp location per-run to work around
   rootless podman's UID remapping, then deletes the copy.
+- **Workspace ownership is fixed automatically.** The mounted project
+  directory almost never already belongs to the container's fixed
+  non-root user, which used to cause `git`'s "dubious ownership" error and
+  read-only file edits. The container's entrypoint now starts as root
+  briefly, `chown -R`s the mounted workspace and configures git's
+  `safe.directory`, then permanently drops to the unprivileged user before
+  running anything else — no manual `chown` needed on the host.
 - To point at a different GCP project/region without editing `.env`:
   ```bash
   GCP_PROJECT_ID='other-project' GCP_REGION='us-east5' claude
