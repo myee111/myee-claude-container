@@ -39,6 +39,23 @@ IMAGE_TAG="${IMAGE_TAG:-latest}"
 GCP_REGION="${GCP_REGION:-global}"
 ADC_HOST_PATH="${ADC_HOST_PATH:-$HOME/.config/gcloud/application_default_credentials.json}"
 
+# IMAGE_NAME must be fully qualified (registry/namespace/repo), e.g.
+# quay.io/myee/claude-container. If it's just a bare repo name like
+# "claude-container", podman treats it as an *unqualified* name and
+# silently guesses a registry from /etc/containers/registries.conf's
+# unqualified-search-registries list — which usually picks the wrong one
+# (e.g. registry.access.redhat.com) and fails with a confusing "Repo not
+# found" error instead of ever reaching quay.io. Fail fast instead.
+registry_part="${IMAGE_NAME%%/*}"
+if [[ "$IMAGE_NAME" != */* ]] || [[ "$registry_part" != *.* && "$registry_part" != *:* && "$registry_part" != "localhost" ]]; then
+  echo "claude: IMAGE_NAME='$IMAGE_NAME' is not fully qualified." >&2
+  echo "        Set it in $REPO_DIR/.env to include the registry host, e.g.:" >&2
+  echo "          IMAGE_NAME='quay.io/myee/claude-container'" >&2
+  echo "        A bare name like 'claude-container' makes podman silently guess" >&2
+  echo "        a registry and usually fail against the wrong one." >&2
+  exit 1
+fi
+
 if [[ -z "${GCP_PROJECT_ID:-}" ]]; then
   echo "claude: GCP_PROJECT_ID is not set. Create $REPO_DIR/.env from .env.example first." >&2
   exit 1
