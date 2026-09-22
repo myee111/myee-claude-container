@@ -3,15 +3,16 @@
 Claude Code running in a minimal UBI 10 Micro container, authenticated to
 Anthropic through Google Vertex AI. Runs with `podman`. **x86_64 only.**
 
-Image: `quay.io/myee/claude-container:latest`
-Repo: `https://github.com/myee111/myee-claude-container` (private)
+Image: `quay.io/myee/claude-container:latest` (private — needs quay.io auth to pull)
+Repo: `https://github.com/myee111/myee-claude-container` (public — no auth needed to clone)
 
 ---
 
 ## 1. Build — **requires the git repo**
 
 Only needed once (or whenever the `Containerfile` changes), on an x86_64
-host with `podman`, `make`, and `git`.
+host with `podman`, `make`, and `git`. No GitHub auth needed — the repo is
+public.
 
 ```bash
 git clone https://github.com/myee111/myee-claude-container.git
@@ -36,16 +37,12 @@ You need the git repo here because `make build` uses the `Containerfile` and
 This is the everyday path: running the already-built, already-published
 image. You never run `make`/touch the `Containerfile` for this — you only
 need the **[`client/`](client/)** folder. The easiest way to get just that
-folder onto a new host is still one `git clone` command (the repo is tiny,
-so pulling the whole thing costs nothing):
+folder onto a new host is still one `git clone` command, **no auth needed**
+(the repo is public — only the container *image* on quay.io is private):
 
 ```bash
-gh repo clone myee111/myee-claude-container -- --depth 1 && cd myee-claude-container/client
+git clone --depth 1 https://github.com/myee111/myee-claude-container.git && cd myee-claude-container/client
 ```
-
-(No `gh` CLI logged in on that host? See
-[`client/README.md`](client/README.md) step 1 for the personal-access-token
-equivalent.)
 
 **One-time setup on that host:**
 

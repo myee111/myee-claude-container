@@ -6,43 +6,21 @@ Everything in this folder is all you need to run `claude` (backed by
 The [myee-claude-container](https://github.com/myee111/myee-claude-container)
 repo itself is only needed to *build* a new image version — you don't need
 to work inside a full checkout of it just to run `claude`. Cloning it once
-to grab this folder is still the easiest way to *get* it onto a new host,
-though (see below) — the repo is a handful of small text files, so pulling
-the whole thing costs nothing.
+to grab this folder is still the easiest way to *get* it onto a new host
+(see below) — the repo is a handful of small text files, so pulling the
+whole thing costs nothing. **The repo is public, so no GitHub auth/token is
+needed to clone it** (`quay.io` credentials in step 4 are a separate thing —
+the container *image* is still private).
 
 ## Setup (once per host)
 
-1. Get this folder onto the host — **one command**, using the `gh` CLI
-   (handles auth automatically if you're already logged in with
-   `gh auth login`):
+1. Get this folder onto the host — **one command, no auth needed**:
 
    ```bash
-   gh repo clone myee111/myee-claude-container -- --depth 1 && cd myee-claude-container/client
+   git clone --depth 1 https://github.com/myee111/myee-claude-container.git && cd myee-claude-container/client
    ```
 
-   No `gh` installed yet? On RHEL / Fedora / CentOS / Rocky (dnf4, which is
-   what RHEL 10 uses):
-
-   ```bash
-   sudo dnf install -y 'dnf-command(config-manager)'
-   sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-   sudo dnf install -y gh
-   gh auth login
-   ```
-
-   On macOS: `brew install gh && gh auth login`. Other platforms: see the
-   [official install docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).
-
-   Not able to install `gh` or log in interactively on this host? Use a
-   [GitHub personal access token](https://github.com/settings/tokens)
-   (fine-grained, read-only, scoped to just this repo) instead:
-
-   ```bash
-   git clone --depth 1 https://<YOUR_TOKEN>@github.com/myee111/myee-claude-container.git && cd myee-claude-container/client
-   ```
-
-   Either way you end up sitting in the `client/` directory, ready for the
-   next steps.
+   (Already have the `gh` CLI? `gh repo clone myee111/myee-claude-container -- --depth 1` works the same way.)
 
 2. Make sure `podman` is installed.
 3. Get a Google Application Default Credentials (ADC) JSON file onto this
