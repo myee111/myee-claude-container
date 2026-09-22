@@ -12,7 +12,36 @@ whole thing costs nothing. **The repo is public, so no GitHub auth/token is
 needed to clone it** (`quay.io` credentials in step 4 are a separate thing —
 the container *image* is still private).
 
-## Setup (once per host)
+## Quick setup
+
+If `git` and `podman` are already installed, and you already have a
+filled-in `.env` (e.g. prepared on another machine — see `.env.example` for
+the fields), setup is three steps:
+
+```bash
+# 1. Clone the repo (the client/ folder is what you actually need)
+git clone --depth 1 https://github.com/myee111/myee-claude-container.git
+cd myee-claude-container/client
+
+# 2. Drop your prepared .env in here (scp it in, or cp from wherever you kept it)
+cp /path/to/your/prepared/.env .env
+
+# 3. Run the one setup script — logs into quay.io and puts `claude` on your PATH
+./bin/setup.sh
+```
+
+`setup.sh` validates `.env` (fails fast with a clear message if something
+required is missing or `IMAGE_NAME` isn't fully qualified), logs `podman`
+into `quay.io`, symlinks `bin/claude` onto `~/.local/bin`, and adds that to
+your shell rc if it isn't already on `PATH`. It assumes your Google ADC
+credentials file already exists at the path `.env` points to (or the
+default `gcloud` location) — see step 3 below if you still need to get one
+onto this host.
+
+If you don't have `git`/`podman` yet, or need to set up ADC/`gcloud` from
+scratch, follow the detailed walkthrough below instead.
+
+## Detailed setup (once per host)
 
 1. Get this folder onto the host — **one command, no auth needed**:
 
@@ -55,22 +84,14 @@ the container *image* is still private).
    $EDITOR .env   # remember: single-quote every value; set ADC_HOST_PATH
                   # if your credentials file isn't at the default gcloud location
    ```
-5. Log podman into quay.io (the image is private):
+5. Run the setup script — logs podman into quay.io (the image is private)
+   and puts `claude` on your `PATH`:
    ```bash
-   ./bin/login-quay
+   ./bin/setup.sh
    ```
-6. Put `bin/claude` on your `PATH` (or just call it by path):
-   ```bash
-   mkdir -p ~/.local/bin
-   ln -s "$PWD/bin/claude" ~/.local/bin/claude
-   ```
-   Then make sure `~/.local/bin` is actually on your `PATH` — it often
-   isn't by default for `root` or on minimal systems:
-   ```bash
-   echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/.local/bin" \
-     && echo "already on PATH" \
-     || { echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc; echo "added to ~/.bashrc — run: source ~/.bashrc"; }
-   ```
+   (This replaces having to run `./bin/login-quay` and manually
+   `ln -s`/`mkdir`/edit your shell rc separately — `setup.sh` does all of
+   that in one step and validates `.env` along the way.)
 
 ### Option D: installing the `gcloud` CLI on this host
 
