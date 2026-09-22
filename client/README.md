@@ -63,7 +63,21 @@ the container *image* is still private).
 Only needed if you want to run `gcloud auth application-default login`
 directly on this host instead of using Option A or B above.
 
-**RHEL / Fedora / CentOS (`dnf`):**
+**RHEL 10 / any Linux / macOS — installer script (recommended, no root needed):**
+```bash
+curl -sSL https://sdk.cloud.google.com | bash
+exec -l "$SHELL"   # reload your shell so `gcloud` is on PATH
+gcloud auth application-default login
+```
+
+> **RHEL 10 note:** the `dnf`-based install below currently **fails on RHEL
+> 10** with `Policy rejects ...: No binding signature` — RHEL 10's stricter
+> `rpm-sequoia` GPG backend rejects Google's current repo signing key. This
+> is a real, reproducible issue on RHEL 10 (confirmed independently of any
+> particular host), not a local misconfiguration. Use the installer script
+> above instead. It's also just easier — no root/repo setup required.
+
+**RHEL 9 / Fedora / CentOS (`dnf`, works fine there):**
 ```bash
 sudo tee /etc/yum.repos.d/google-cloud-sdk.repo <<'EOF'
 [google-cloud-cli]
@@ -75,6 +89,7 @@ repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
 sudo dnf install -y google-cloud-cli
+gcloud auth application-default login
 ```
 
 **Debian / Ubuntu (`apt`):**
@@ -83,21 +98,12 @@ sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificat
 curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
 echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
 sudo apt-get update && sudo apt-get install -y google-cloud-cli
+gcloud auth application-default login
 ```
 
 **macOS (Homebrew):**
 ```bash
 brew install --cask google-cloud-sdk
-```
-
-**Any platform (official installer script, no root needed):**
-```bash
-curl -sSL https://sdk.cloud.google.com | bash
-exec -l "$SHELL"   # reload your shell so `gcloud` is on PATH
-```
-
-Then:
-```bash
 gcloud auth application-default login
 ```
 
